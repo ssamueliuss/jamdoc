@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-loading-bar {
+  width: 100%;
+  animation: loading-bar 2s infinite linear;
+}
