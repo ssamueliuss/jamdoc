@@ -80,7 +80,7 @@ export function ApuntesRapidos({
                   <div className="space-y-2">
                     {apuntes.filter(a => a.proyectoId === p.id).slice().reverse().slice(0, 3).map(a => {
                       const isImage = String(a.contenido).startsWith('data:image');
-                      const hasText = !isImage || (isImage && a.etiqueta);
+                      
                       
                       return (
                         <div key={a.id} className="group border-l-2 border-indigo-100 bg-gray-50/50 rounded-r p-2 flex flex-col gap-1 hover:border-indigo-500 transition-all">
