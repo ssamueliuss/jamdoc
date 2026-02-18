@@ -19,10 +19,10 @@ export function WhiteboardModal({ isOpen, onClose, onSave }: WhiteboardModalProp
     const canvas = canvasRef.current!;
     const ratio = window.devicePixelRatio || 1;
     // Make the canvas half the previous size so the modal fits better on screen
-    canvas.width = 397 * ratio; // half of 794
-    canvas.height = 561 * ratio; // half of 1122
-    canvas.style.width = '397px';
-    canvas.style.height = '561px';
+    canvas.width = 460 * ratio; // half of 794
+    canvas.height = 256 * ratio; // half of 1122
+    canvas.style.width = '460px';
+    canvas.style.height = '256px';
     const ctx = canvas.getContext('2d')!;
     ctx.scale(ratio, ratio);
     ctx.lineCap = 'round';
