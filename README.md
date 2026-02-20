@@ -23,6 +23,8 @@ Si quieres ver los proyectos reales que han nacido de estos diseños o conocer m
 
 👉 **[Descarga la versión estable de JamDoc](https://sillydevs.itch.io/jamdoc)**
 
+[![Descargar en itch.io](https://itch.io/static/images/badges/en-white.svg)](https://sillydevs.itch.io/jamdoc)
+
 ---
 
 ## Tecnologías utilizadas
