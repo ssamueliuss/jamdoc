@@ -7,12 +7,16 @@ export default function useDatabase() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [apuntes, setApuntes] = useState<Apunte[]>([]);
-  const [estadisticas, setEstadisticas] = useState<Estadisticas>({ proyectosActivos: 0, jamsActivas: 0, tareasPendientes: 0 });
+  const [estadisticas, setEstadisticas] = useState<Estadisticas>({ 
+    proyectosActivos: 0, 
+    jamsActivas: 0, 
+    tareasPendientes: 0 
+  });
 
+  // --- CARGA INICIAL ---
   useEffect(() => {
     let mounted = true;
     (async () => {
-      // Only seed mock data in development to keep production builds clean
       if (import.meta.env.DEV) {
         await seedIfEmpty({ proyectos: proyectosMock, tareas: tareasMock, apuntes: apuntesMock });
       }
@@ -25,7 +29,13 @@ export default function useDatabase() {
       setProyectos(pro);
       setTareas(tar);
       setApuntes(ap);
-      const jamsActivas = pro.filter(p => (p as any).tipo === 'jam' && (p as any).jamDeadline && new Date((p as any).jamDeadline) > new Date()).length;
+
+      const jamsActivas = pro.filter(p => 
+        (p as any).tipo === 'jam' && 
+        (p as any).jamDeadline && 
+        new Date((p as any).jamDeadline) > new Date()
+      ).length;
+
       setEstadisticas({
         proyectosActivos: pro.length,
         jamsActivas,
@@ -36,6 +46,7 @@ export default function useDatabase() {
     return () => { mounted = false; };
   }, []);
 
+  // --- FUNCIONES DE PROYECTOS ---
   const addProyecto = useCallback(async (proyecto: Partial<Proyecto>) => {
     const id = await db.proyectos.add(proyecto as Proyecto);
     const saved = await db.proyectos.get(id as number);
@@ -46,43 +57,13 @@ export default function useDatabase() {
     return saved;
   }, []);
 
-  const toggleTarea = useCallback(async (id: number) => {
-    const t = await db.tareas.get(id);
-    if (!t) return;
-    await db.tareas.update(id, { completada: !t.completada });
-    const newT = await db.tareas.toArray();
-    setTareas(newT);
-    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
-  }, []);
-
-  const addTarea = useCallback(async (tarea: Partial<Tarea>) => {
-    const id = await db.tareas.add(tarea as Tarea);
-    const newT = await db.tareas.toArray();
-    setTareas(newT);
-    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
-    return id;
-  }, []);
-
-  const updateTarea = useCallback(async (id: number, cambios: Partial<Tarea>) => {
-    await db.tareas.update(id, cambios as any);
-    const newT = await db.tareas.toArray();
-    setTareas(newT);
-    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
-    return await db.tareas.get(id as number);
-  }, []);
-
-  const addApunte = useCallback(async (apunte: Partial<Apunte>) => {
-    const id = await db.apuntes.add(apunte as Apunte);
-    const newA = await db.apuntes.toArray();
-    setApuntes(newA);
-    return id;
-  }, []);
-
-  const updateApunte = useCallback(async (id: number, cambios: Partial<Apunte>) => {
-    await db.apuntes.update(id, cambios as any);
-    const newA = await db.apuntes.toArray();
-    setApuntes(newA);
-    return await db.apuntes.get(id as number);
+  const updateProyecto = useCallback(async (id: number, cambios: Partial<Proyecto>) => {
+    await db.proyectos.update(id, cambios as any);
+    const newList = await db.proyectos.toArray();
+    const jamsActivas = newList.filter(p => (p as any).tipo === 'jam' && (p as any).jamDeadline && new Date((p as any).jamDeadline) > new Date()).length;
+    setProyectos(newList);
+    setEstadisticas(s => ({ ...s, proyectosActivos: newList.length, jamsActivas }));
+    return await db.proyectos.get(id as number);
   }, []);
 
   const deleteProyecto = useCallback(async (id: number) => {
@@ -101,11 +82,52 @@ export default function useDatabase() {
     setEstadisticas(s => ({ ...s, proyectosActivos: newP.length, tareasPendientes: newT.filter(tt => !tt.completada).length, jamsActivas }));
   }, []);
 
+  // --- FUNCIONES DE TAREAS ---
+  const addTarea = useCallback(async (tarea: Partial<Tarea>) => {
+    const id = await db.tareas.add(tarea as Tarea);
+    const newT = await db.tareas.toArray();
+    setTareas(newT);
+    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
+    return id;
+  }, []);
+
+  const updateTarea = useCallback(async (id: number, cambios: Partial<Tarea>) => {
+    await db.tareas.update(id, cambios as any);
+    const newT = await db.tareas.toArray();
+    setTareas(newT);
+    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
+    return await db.tareas.get(id as number);
+  }, []);
+
+  const toggleTarea = useCallback(async (id: number) => {
+    const t = await db.tareas.get(id);
+    if (!t) return;
+    await db.tareas.update(id, { completada: !t.completada });
+    const newT = await db.tareas.toArray();
+    setTareas(newT);
+    setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
+  }, []);
+
   const deleteTarea = useCallback(async (id: number) => {
     await db.tareas.delete(id);
     const newT = await db.tareas.toArray();
     setTareas(newT);
     setEstadisticas(s => ({ ...s, tareasPendientes: newT.filter(tt => !tt.completada).length }));
+  }, []);
+
+  // --- FUNCIONES DE APUNTES ---
+  const addApunte = useCallback(async (apunte: Partial<Apunte>) => {
+    const id = await db.apuntes.add(apunte as Apunte);
+    const newA = await db.apuntes.toArray();
+    setApuntes(newA);
+    return id;
+  }, []);
+
+  const updateApunte = useCallback(async (id: number, cambios: Partial<Apunte>) => {
+    await db.apuntes.update(id, cambios as any);
+    const newA = await db.apuntes.toArray();
+    setApuntes(newA);
+    return await db.apuntes.get(id as number);
   }, []);
 
   const deleteApunte = useCallback(async (id: number) => {
@@ -114,13 +136,63 @@ export default function useDatabase() {
     setApuntes(newA);
   }, []);
 
-  const updateProyecto = useCallback(async (id: number, cambios: Partial<Proyecto>) => {
-    await db.proyectos.update(id, cambios as any);
-    const newList = await db.proyectos.toArray();
-    const jamsActivas = newList.filter(p => (p as any).tipo === 'jam' && (p as any).jamDeadline && new Date((p as any).jamDeadline) > new Date()).length;
-    setProyectos(newList);
-    setEstadisticas(s => ({ ...s, proyectosActivos: newList.length, jamsActivas }));
-    return await db.proyectos.get(id as number);
+  // --- GESTIÓN DE DATOS (BACKUP, IMPORT, RESET) ---
+
+  const exportarDatos = useCallback(async () => {
+    const data = {
+      proyectos: await db.proyectos.toArray(),
+      tareas: await db.tareas.toArray(),
+      apuntes: await db.apuntes.toArray(),
+      exportadoEn: new Date().toISOString(),
+      version: "1.0"
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jamdoc_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const importarDatos = useCallback(async (jsonFile: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        
+        // Validación básica
+        if (!data.proyectos || !data.tareas || !data.apuntes) {
+          throw new Error("Formato inválido");
+        }
+
+        await db.transaction('rw', db.proyectos, db.tareas, db.apuntes, async () => {
+          await db.proyectos.clear();
+          await db.tareas.clear();
+          await db.apuntes.clear();
+          
+          await db.proyectos.bulkAdd(data.proyectos);
+          await db.tareas.bulkAdd(data.tareas);
+          await db.apuntes.bulkAdd(data.apuntes);
+        });
+
+        window.location.reload();
+      } catch (err) {
+        console.error("Error al importar:", err);
+        alert("El archivo no es un backup válido de JamDoc o está corrupto.");
+      }
+    };
+    reader.readAsText(jsonFile);
+  }, []);
+
+  const resetBaseDeDatos = useCallback(async () => {
+    await db.transaction('rw', db.proyectos, db.tareas, db.apuntes, async () => {
+      await db.proyectos.clear();
+      await db.tareas.clear();
+      await db.apuntes.clear();
+    });
+    window.location.reload();
   }, []);
 
   return {
@@ -130,13 +202,16 @@ export default function useDatabase() {
     estadisticas,
     addProyecto,
     updateProyecto,
+    deleteProyecto,
     addTarea,
     updateTarea,
     toggleTarea,
+    deleteTarea,
     addApunte,
     updateApunte,
-    deleteProyecto,
-    deleteTarea,
     deleteApunte,
+    exportarDatos,
+    importarDatos,
+    resetBaseDeDatos
   };
 }

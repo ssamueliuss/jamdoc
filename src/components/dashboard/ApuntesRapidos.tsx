@@ -1,8 +1,62 @@
 import { Card } from "../ui/Card";
 import { Apunte, Proyecto } from "../../types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WhiteboardModal } from "../ui/WhiteboardModal";
-import { StickyNote, Pencil, X, Image as ImageIcon } from "lucide-react";
+import { StickyNote, Image as ImageIcon, Save } from "lucide-react";
+
+// --- SUBCOMPONENTE: MODAL DE EDICIÓN ---
+function EditNoteModal({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  initialValue 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSave: (val: string) => void; 
+  initialValue: string 
+}) {
+  const [text, setText] = useState(initialValue);
+
+  // Sincroniza el texto si el initialValue cambia mientras el modal está abierto
+  useEffect(() => {
+    setText(initialValue);
+  }, [initialValue]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in duration-200">
+        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+          
+        </div>
+        <div className="p-4">
+          <textarea 
+            className="w-full h-32 p-3 text-sm border-2 border-gray-100 rounded-lg focus:border-indigo-500 outline-none resize-none transition-all"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-2 mt-4">
+            <button 
+              onClick={onClose}
+              className="flex-1 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={() => { onSave(text); onClose(); }}
+              className="flex-1 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center justify-center gap-2 transition-all"
+            >
+              <Save size={14} /> Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ApuntesRapidosProps {
   apuntes: Apunte[];
@@ -17,17 +71,22 @@ export function ApuntesRapidos({
   proyectos, 
   addApunte, 
   onUpdateApunte, 
-  onDeleteApunte 
 }: ApuntesRapidosProps) {
   const [whiteOpen, setWhiteOpen] = useState(false);
   const [projectForNote, setProjectForNote] = useState<number | null>(null);
+  
+  // Estado para controlar qué apunte se está editando
+  const [editModal, setEditModal] = useState<{ open: boolean; apunte: Apunte | null }>({
+    open: false,
+    apunte: null
+  });
 
   const openForProject = (id: number) => {
     setProjectForNote(id);
     setWhiteOpen(true);
   };
 
-  const handleSave = async (dataUrl: string | null, note?: string) => {
+  const handleSaveNew = async (dataUrl: string | null, note?: string) => {
     if (dataUrl && String(dataUrl).startsWith('data:image')) {
       await addApunte({ 
         contenido: dataUrl, 
@@ -47,6 +106,18 @@ export function ApuntesRapidos({
     setProjectForNote(null);
   };
 
+  const handleConfirmEdit = (newValue: string) => {
+    if (!editModal.apunte) return;
+    const a = editModal.apunte;
+    const isImage = String(a.contenido).startsWith('data:image');
+    
+    // Si es imagen, editamos la etiqueta. Si es texto, el contenido.
+    const cambios = isImage ? { etiqueta: newValue } : { contenido: newValue };
+    
+    onUpdateApunte?.(a.id as number, { ...cambios, fecha: new Date() });
+    setEditModal({ open: false, apunte: null });
+  };
+
   const verImagenMasiva = (base64: string) => {
     const win = window.open();
     if (win) {
@@ -57,7 +128,6 @@ export function ApuntesRapidos({
     }
   };
 
-  // Título con icono de Lucide
   const tituloConIcono = (
     <div className="flex items-center gap-2">
       <StickyNote size={20} className="text-indigo-600" />
@@ -111,28 +181,7 @@ export function ApuntesRapidos({
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => {
-                                  const actual = isImage ? (a.etiqueta || '') : String(a.contenido);
-                                  const n = prompt('Editar apunte:', actual);
-                                  if (n !== null) {
-                                    const cambios = isImage ? { etiqueta: n } : { contenido: n };
-                                    onUpdateApunte?.(a.id as number, { ...cambios, fecha: new Date() });
-                                  }
-                                }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-opacity"
-                                title="Editar texto"
-                              >
-                                <Pencil size={12} />
-                              </button>
-                              <button 
-                                onClick={() => { if(confirm('¿Borrar apunte?')) onDeleteApunte?.(a.id as number) }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:bg-red-50 rounded transition-opacity"
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
+                            
                           </div>
                           <div className="text-[8px] text-gray-400 self-end">
                             {new Date(a.fecha).toLocaleDateString()}
@@ -140,18 +189,13 @@ export function ApuntesRapidos({
                         </div>
                       );
                     })}
-                    {apuntes.filter(a => a.proyectoId === p.id).length === 0 && (
-                      <div className="text-center py-4 border-2 border-dashed border-gray-100 rounded">
-                         <p className="text-[10px] text-gray-400 uppercase font-medium">Sin apuntes</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
 
               <button 
                 onClick={() => openForProject(p.id)} 
-                className="mt-4 w-full py-2 bg-slate-800 hover:bg-indigo-600 text-white text-[11px] font-bold rounded transition-colors flex items-center justify-center gap-2 uppercase tracking-tighter shadow-sm"
+                className="mt-4 w-full py-2 bg-slate-800 hover:bg-indigo-600 text-white text-[11px] font-bold rounded transition-colors flex items-center justify-center gap-2 uppercase tracking-tighter"
               >
                 + Añadir Nota / Dibujo
               </button>
@@ -159,7 +203,28 @@ export function ApuntesRapidos({
           ))}
         </div>
 
-        <WhiteboardModal isOpen={whiteOpen} onClose={() => setWhiteOpen(false)} onSave={handleSave} />
+        <WhiteboardModal 
+          isOpen={whiteOpen} 
+          onClose={() => setWhiteOpen(false)} 
+          onSave={handleSaveNew} 
+        />
+        
+        {/* MODAL DE EDICIÓN CON KEY PARA REINICIAR EL ESTADO */}
+        {editModal.open && (
+          <EditNoteModal 
+            key={editModal.apunte?.id} 
+            isOpen={editModal.open}
+            onClose={() => setEditModal({ open: false, apunte: null })}
+            onSave={handleConfirmEdit}
+            initialValue={
+              editModal.apunte 
+                ? (String(editModal.apunte.contenido).startsWith('data:image') 
+                    ? (editModal.apunte.etiqueta || '') 
+                    : String(editModal.apunte.contenido))
+                : ''
+            }
+          />
+        )}
       </div>
     </Card>
   );

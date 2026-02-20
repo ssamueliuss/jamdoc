@@ -19,6 +19,7 @@ import { TareasPage } from "./components/pages/TareasPage";
 import { ApuntesPage } from "./components/pages/ApuntesPage";
 import { AjustesPage } from "./components/pages/AjustesPage";
 import { ProjectDetailModal } from "./components/pages/ProjectDetailModal";
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   // --- ESTADOS DE CARGA Y SPLASH ---
@@ -437,6 +438,19 @@ if (isLoading) {
             deleteTarea={handleDeleteTarea}
           />
         )}
+
+        <Toaster 
+          position="bottom-right" 
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: '10px',
+              background: '#333',
+              color: '#fff',
+            },
+          }} 
+        />
+        
       </div>
     </UserProvider>
   );
