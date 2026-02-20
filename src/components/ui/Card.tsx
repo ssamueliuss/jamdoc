@@ -3,7 +3,8 @@ import { ReactNode } from "react";
 interface CardProps {
   children: ReactNode;
   className?: string;
-  titulo?: string;
+  // CAMBIO: De 'string' a 'ReactNode' para que acepte iconos
+  titulo?: ReactNode; 
 }
 
 export function Card({ children, className = "", titulo }: CardProps) {

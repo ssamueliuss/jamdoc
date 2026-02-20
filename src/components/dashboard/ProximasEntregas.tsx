@@ -1,19 +1,24 @@
 import { Card } from "../ui/Card";
 import { Proyecto } from "../../types";
+import { Calendar } from "lucide-react";
 
 interface ProximasEntregasProps {
   proyectos: Proyecto[];
 }
 
 export function ProximasEntregas({ proyectos }: ProximasEntregasProps) {
-  // Por ahora, como no tenemos fechas de entrega en la nueva estructura,
-  // usamos fechaModificacion como ejemplo (sin cálculo de días todavía)
+  // Título con el icono de Lucide en color índigo/morado
+  const tituloConIcono = (
+    <div className="flex items-center gap-2">
+      <Calendar size={18} className="text-indigo-600" />
+      <span>Proyectos Recientes</span>
+    </div>
+  );
 
   return (
-    <Card titulo="📅 Proyectos Recientes">
+    <Card titulo={tituloConIcono}>
       <div className="space-y-3">
         {proyectos.map((proyecto) => {
-          // Usamos fechaModificacion como ejemplo, idealmente tendríamos fechaEntrega
           return (
             <div key={proyecto.id} className="flex justify-between items-center">
               <div>

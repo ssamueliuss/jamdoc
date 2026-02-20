@@ -2,6 +2,7 @@ import { Card } from "../ui/Card";
 import { Apunte, Proyecto } from "../../types";
 import { useState } from "react";
 import { WhiteboardModal } from "../ui/WhiteboardModal";
+import { StickyNote, Pencil, X, Image as ImageIcon } from "lucide-react";
 
 interface ApuntesRapidosProps {
   apuntes: Apunte[];
@@ -28,7 +29,6 @@ export function ApuntesRapidos({
 
   const handleSave = async (dataUrl: string | null, note?: string) => {
     if (dataUrl && String(dataUrl).startsWith('data:image')) {
-      // Caso: Imagen (con o sin texto en etiqueta)
       await addApunte({ 
         contenido: dataUrl, 
         fecha: new Date(), 
@@ -36,7 +36,6 @@ export function ApuntesRapidos({
         proyectoId: projectForNote ?? undefined 
       });
     } else if (note) {
-      // Caso: Solo Texto
       await addApunte({ 
         contenido: note, 
         fecha: new Date(), 
@@ -58,8 +57,16 @@ export function ApuntesRapidos({
     }
   };
 
+  // Título con icono de Lucide
+  const tituloConIcono = (
+    <div className="flex items-center gap-2">
+      <StickyNote size={20} className="text-indigo-600" />
+      <span>Apuntes por Proyecto</span>
+    </div>
+  );
+
   return (
-    <Card titulo="📌 Apuntes por Proyecto">
+    <Card titulo={tituloConIcono}>
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {proyectos.map((p) => (
@@ -81,29 +88,30 @@ export function ApuntesRapidos({
                     {apuntes.filter(a => a.proyectoId === p.id).slice().reverse().slice(0, 3).map(a => {
                       const isImage = String(a.contenido).startsWith('data:image');
                       
-                      
                       return (
                         <div key={a.id} className="group border-l-2 border-indigo-100 bg-gray-50/50 rounded-r p-2 flex flex-col gap-1 hover:border-indigo-500 transition-all">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 overflow-hidden">
-                              {/* Visualización de Imagen si existe */}
                               {isImage && (
-                                <img 
-                                  src={a.contenido} 
-                                  alt="preview" 
-                                  className="w-10 h-8 object-cover rounded shadow-sm cursor-pointer hover:scale-110 transition-transform"
-                                  onClick={() => verImagenMasiva(a.contenido)}
-                                />
+                                <div className="relative">
+                                  <img 
+                                    src={a.contenido} 
+                                    alt="preview" 
+                                    className="w-10 h-8 object-cover rounded shadow-sm cursor-pointer hover:scale-110 transition-transform"
+                                    onClick={() => verImagenMasiva(a.contenido)}
+                                  />
+                                  <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-xs">
+                                    <ImageIcon size={8} className="text-indigo-500" />
+                                  </div>
+                                </div>
                               )}
                               
-                              {/* Visualización de Texto (contenido o etiqueta) */}
                               <div className="text-[11px] text-gray-700 truncate max-w-[130px]">
                                 {isImage ? (a.etiqueta || <span className="text-gray-300 italic">Sin nota</span>) : String(a.contenido)}
                               </div>
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {/* Botón Editar: Siempre edita texto */}
                               <button 
                                 onClick={() => {
                                   const actual = isImage ? (a.etiqueta || '') : String(a.contenido);
@@ -113,16 +121,16 @@ export function ApuntesRapidos({
                                     onUpdateApunte?.(a.id as number, { ...cambios, fecha: new Date() });
                                   }
                                 }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-opacity"
                                 title="Editar texto"
                               >
-                                ✎
+                                <Pencil size={12} />
                               </button>
                               <button 
                                 onClick={() => { if(confirm('¿Borrar apunte?')) onDeleteApunte?.(a.id as number) }}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:bg-red-50 rounded"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:bg-red-50 rounded transition-opacity"
                               >
-                                ✕
+                                <X size={12} />
                               </button>
                             </div>
                           </div>
@@ -134,7 +142,7 @@ export function ApuntesRapidos({
                     })}
                     {apuntes.filter(a => a.proyectoId === p.id).length === 0 && (
                       <div className="text-center py-4 border-2 border-dashed border-gray-100 rounded">
-                         <p className="text-[10px] text-gray-400 uppercase">Sin apuntes</p>
+                         <p className="text-[10px] text-gray-400 uppercase font-medium">Sin apuntes</p>
                       </div>
                     )}
                   </div>
@@ -143,7 +151,7 @@ export function ApuntesRapidos({
 
               <button 
                 onClick={() => openForProject(p.id)} 
-                className="mt-4 w-full py-2 bg-slate-800 hover:bg-indigo-600 text-white text-[11px] font-bold rounded transition-colors flex items-center justify-center gap-2 uppercase tracking-tighter"
+                className="mt-4 w-full py-2 bg-slate-800 hover:bg-indigo-600 text-white text-[11px] font-bold rounded transition-colors flex items-center justify-center gap-2 uppercase tracking-tighter shadow-sm"
               >
                 + Añadir Nota / Dibujo
               </button>
