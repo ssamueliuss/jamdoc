@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { Save, X, Trash2, Download, Type, Pencil } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast"; // 1. Importar toast
 
 interface WhiteboardModalProps {
   isOpen: boolean;
@@ -10,19 +12,21 @@ export function WhiteboardModal({ isOpen, onClose, onSave }: WhiteboardModalProp
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const drawing = useRef(false);
-  const [color, setColor] = useState('#000000');
+  const [color, setColor] = useState('#4f46e5');
   const [size, setSize] = useState(3);
   const [note, setNote] = useState('');
+  const [hasDrawing, setHasDrawing] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     const canvas = canvasRef.current!;
     const ratio = window.devicePixelRatio || 1;
-    // Make the canvas half the previous size so the modal fits better on screen
-    canvas.width = 460 * ratio; // half of 794
-    canvas.height = 256 * ratio; // half of 1122
-    canvas.style.width = '460px';
-    canvas.style.height = '256px';
+    
+    canvas.width = 460 * ratio; 
+    canvas.height = 200 * ratio; 
+    canvas.style.width = '100%';
+    canvas.style.height = '200px';
+    
     const ctx = canvas.getContext('2d')!;
     ctx.scale(ratio, ratio);
     ctx.lineCap = 'round';
@@ -30,15 +34,14 @@ export function WhiteboardModal({ isOpen, onClose, onSave }: WhiteboardModalProp
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctxRef.current = ctx;
-    // clear
+
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+    setHasDrawing(false);
   }, [isOpen]);
 
   useEffect(() => {
-    if (ctxRef.current) {
-      ctxRef.current.strokeStyle = color;
-    }
+    if (ctxRef.current) ctxRef.current.strokeStyle = color;
   }, [color]);
 
   useEffect(() => {
@@ -47,115 +50,161 @@ export function WhiteboardModal({ isOpen, onClose, onSave }: WhiteboardModalProp
 
   if (!isOpen) return null;
 
-  const getPos = (e: PointerEvent | MouseEvent | TouchEvent) => {
+  const getPos = (e: any) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const clientX = (e as any).clientX ?? ((e as TouchEvent).touches?.[0]?.clientX);
-    const clientY = (e as any).clientY ?? ((e as TouchEvent).touches?.[0]?.clientY);
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
   const start = (e: any) => {
     drawing.current = true;
+    setHasDrawing(true);
     const pos = getPos(e);
-    const ctx = ctxRef.current!;
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    e.preventDefault();
+    ctxRef.current?.beginPath();
+    ctxRef.current?.moveTo(pos.x, pos.y);
   };
 
   const move = (e: any) => {
     if (!drawing.current) return;
     const pos = getPos(e);
-    const ctx = ctxRef.current!;
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    e.preventDefault();
+    ctxRef.current?.lineTo(pos.x, pos.y);
+    ctxRef.current?.stroke();
   };
 
-  const end = (e: any) => {
-    if (!drawing.current) return;
-    const ctx = ctxRef.current!;
-    ctx.closePath();
+  const end = () => {
+    ctxRef.current?.closePath();
     drawing.current = false;
-    e.preventDefault();
   };
 
   const clear = () => {
     const canvas = canvasRef.current!;
     const ctx = ctxRef.current!;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setHasDrawing(false);
+    toast('Pizarra limpia', { icon: '🧹' }); // Toast informativo
   };
 
-  const handleSave = () => {
+  const handleExport = () => {
+    try {
+      const link = document.createElement('a');
+      link.href = canvasRef.current!.toDataURL();
+      link.download = `boceto-${Date.now()}.png`;
+      link.click();
+      
+      // 2. Toast de exportación exitosa
+      toast.success('Imagen exportada correctamente', {
+        style: { borderRadius: '10px', background: '#333', color: '#fff' }
+      });
+    } catch (error) {
+      toast.error('Error al exportar la imagen');
+    }
+  };
+
+  const handleSaveAll = () => {
     const canvas = canvasRef.current!;
-    const dataUrl = canvas.toDataURL('image/png');
+    const dataUrl = hasDrawing ? canvas.toDataURL('image/png') : null;
+    
     onSave(dataUrl, note.trim() || undefined);
-    setNote('');
-  };
+    
+    // 3. Toast de guardado exitoso
+    toast.success('Apunte guardado en el proyecto', {
+      icon: '📝',
+      duration: 3000
+    });
 
-  const handleSaveNoteOnly = () => {
-    onSave(null, note.trim() || undefined);
     setNote('');
-  };
-
-  const handleExportImage = () => {
-    const canvas = canvasRef.current!;
-    const dataUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = `apunte-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 py-10">
-      <div className="bg-white rounded-lg shadow-lg p-4 max-w-[90vw] max-h-[80vh] overflow-auto">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-semibold">Pizarra virtual</h3>
-          <div className="flex gap-2">
-            <button onClick={clear} className="px-3 py-1 border rounded">Limpiar</button>
-            <button onClick={onClose} className="px-3 py-1 border rounded">Cerrar</button>
-          </div>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4">
+      {/* El Toaster puede ir aquí o en App.tsx */}
+      <Toaster position="top-right" /> 
+      
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in duration-200">
+        
+        {/* Cabecera */}
+        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50/50">
+          <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+            <Type size={16} className="text-indigo-600" /> Nuevo Apunte
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <X size={20} />
+          </button>
         </div>
 
-        <div className="flex gap-3 mb-2 items-center">
-          <label className="text-sm">Color:</label>
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-          <label className="text-sm">Tamaño:</label>
-          <input type="range" min={1} max={20} value={size} onChange={(e) => setSize(Number(e.target.value))} />
-        </div>
-
-        <div className="border">
-          <canvas
-            ref={canvasRef}
-            onMouseDown={(e) => start(e.nativeEvent)}
-            onMouseMove={(e) => move(e.nativeEvent)}
-            onMouseUp={(e) => end(e.nativeEvent)}
-            onMouseLeave={(e) => end(e.nativeEvent)}
-            onTouchStart={(e) => start(e.nativeEvent)}
-            onTouchMove={(e) => move(e.nativeEvent)}
-            onTouchEnd={(e) => end(e.nativeEvent)}
-          />
-        </div>
-
-        <div className="mt-3">
-          <label className="block text-sm">Nota (opcional)</label>
-          <input value={note} onChange={(e) => setNote(e.target.value)} className="w-full p-2 border rounded mt-1" placeholder="Resumen o título para este apunte" />
-        </div>
-
-        <div className="mt-3 flex justify-between items-center">
-          <div className="flex gap-2">
-            <button onClick={handleExportImage} className="px-3 py-1 border rounded">Exportar imagen</button>
-            <button onClick={handleSaveNoteOnly} className="px-3 py-1 border rounded">Guardar nota (texto)</button>
-          </div>
+        <div className="p-6 space-y-4">
           <div>
-            <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded">Guardar apunte</button>
+            <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Contenido del apunte</label>
+            <textarea 
+              autoFocus
+              value={note} 
+              onChange={(e) => setNote(e.target.value)} 
+              className="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none resize-none transition-all text-sm min-h-[100px]" 
+              placeholder="Escribe tu idea aquí..."
+            />
           </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                <Pencil size={10} /> Boceto opcional
+              </label>
+              <div className="flex gap-3 items-center bg-slate-100 px-3 py-1 rounded-full">
+                <input 
+                  type="color" 
+                  value={color} 
+                  onChange={(e) => setColor(e.target.value)} 
+                  className="w-4 h-4 rounded-full cursor-pointer bg-transparent border-none"
+                />
+                <input 
+                  type="range" 
+                  min={1} max={10} 
+                  value={size} 
+                  onChange={(e) => setSize(Number(e.target.value))} 
+                  className="w-16 h-1 accent-indigo-600"
+                />
+                <button onClick={clear} title="Borrar dibujo" className="text-slate-500 hover:text-red-500 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="border-2 border-dashed border-slate-200 rounded-xl overflow-hidden bg-slate-50 touch-none">
+              <canvas
+                ref={canvasRef}
+                onMouseDown={start}
+                onMouseMove={move}
+                onMouseUp={end}
+                onMouseLeave={end}
+                onTouchStart={start}
+                onTouchMove={move}
+                onTouchEnd={end}
+                className="cursor-crosshair"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
+          <button 
+            onClick={handleExport}
+            className="text-xs font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-colors"
+          >
+            <Download size={14} /> Exportar dibujo
+          </button>
+
+          <button 
+            onClick={handleSaveAll} 
+            disabled={!note.trim() && !hasDrawing}
+            className="h-12 w-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-full shadow-lg shadow-indigo-200 flex items-center justify-center transition-all active:scale-95"
+          >
+            <Save size={20} />
+          </button>
         </div>
       </div>
     </div>

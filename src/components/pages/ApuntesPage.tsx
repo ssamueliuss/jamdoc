@@ -1,7 +1,7 @@
 import { Apunte, Proyecto } from "../../types";
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
-import { Pencil, Trash2, BookOpen, Folder, Save, X } from 'lucide-react';
+import { Pencil, Trash2, BookOpen, Folder, Save, X, MousePointer2 } from 'lucide-react';
 
 interface ApuntesPageProps {
   apuntes: Apunte[];
@@ -70,7 +70,6 @@ export function ApuntesPage({ apuntes, proyectos, onDeleteApunte, onUpdateApunte
 
       <div className="grid grid-cols-1 gap-4">
         {apuntes.length === 0 ? (
-          /* --- SECCIÓN EMPTY STATE --- */
           <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
             <div className="bg-indigo-50 p-6 rounded-full mb-4">
               <BookOpen size={48} className="text-indigo-300" />
@@ -91,14 +90,24 @@ export function ApuntesPage({ apuntes, proyectos, onDeleteApunte, onUpdateApunte
                   <div className="flex-1 space-y-3">
                     {isImage ? (
                       <div className="space-y-3">
+                        {/* CONTENEDOR DE LA IMAGEN CON TOOLTIP */}
                         <div className="relative group w-fit">
                           <img 
                             src={a.contenido} 
                             alt="apunte visual" 
-                            className="w-full max-w-md h-auto max-h-64 object-contain rounded-lg border border-gray-100 cursor-zoom-in group-hover:opacity-90 transition-opacity" 
+                            className="w-full max-w-md h-auto max-h-64 object-contain rounded-lg border border-gray-100 cursor-zoom-in group-hover:opacity-95 transition-all shadow-sm group-hover:shadow-md" 
                             onClick={() => verImagenMasiva(a.contenido)}
                           />
+                          
+                          {/* Aviso de Click Derecho */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0 pointer-events-none">
+                            <div className="bg-slate-800/90 backdrop-blur-sm text-white text-[10px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 shadow-xl border border-white/20">
+                              <MousePointer2 size={12} className="text-indigo-400" />
+                              <span>Click derecho para opciones</span>
+                            </div>
+                          </div>
                         </div>
+
                         {a.etiqueta && (
                           <div className="bg-indigo-50 p-3 rounded-lg border-l-4 border-indigo-400">
                             <p className="text-gray-700 text-sm italic">"{a.etiqueta}"</p>
@@ -156,7 +165,7 @@ export function ApuntesPage({ apuntes, proyectos, onDeleteApunte, onUpdateApunte
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Pencil size={20} className="text-indigo-600" />
-                Editar Apunte
+                Editar {editingApunte && String(editingApunte.contenido).startsWith('data:image') ? 'Etiqueta' : 'Apunte'}
               </h3>
               <button onClick={() => setEditOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={20} />
