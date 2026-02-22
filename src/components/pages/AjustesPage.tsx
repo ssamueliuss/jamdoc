@@ -2,7 +2,17 @@ import { useEffect, useState, useRef } from "react";
 import { OnboardingJamDoc } from "./OnboardingJamDoc";
 import { useUser } from "../../context/UserContext";
 import useDatabase from "../../hooks/useDatabase";
-import { Database, Download, Upload, Trash2, AlertTriangle, X } from "lucide-react";
+import { 
+  Database, 
+  Download, 
+  Upload, 
+  Trash2, 
+  AlertTriangle, 
+  X, 
+  Github, 
+  Gamepad2, 
+  Code2 
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 // --- COMPONENTE DE MODAL DE SEGURIDAD ---
@@ -118,35 +128,35 @@ export function AjustesPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-10">
       <h2 className="text-xl font-semibold">Ajustes</h2>
       
       {/* SECCIÓN PERFIL */}
-      <div className="bg-white p-4 rounded border space-y-4">
+      <div className="bg-white p-4 rounded border border-gray-200 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Nombre de usuario</label>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Nombre de usuario</label>
           <input
-            className="border rounded px-3 py-1 w-full max-w-xs focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="border rounded px-3 py-1 w-full max-w-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             value={nombre}
             onChange={handleNombreChange}
             maxLength={24}
           />
         </div>
-        <button className="text-indigo-600 hover:underline text-sm" onClick={() => setShowOnboarding(true)}>
+        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors" onClick={() => setShowOnboarding(true)}>
           Ver guía de JamDoc
         </button>
       </div>
 
       {/* GESTIÓN DE DATOS */}
-      <div className="bg-white p-4 rounded border space-y-6">
+      <div className="bg-white p-4 rounded border border-gray-200 space-y-6">
         <div className="flex items-center gap-2 border-b pb-2">
           <Database size={18} className="text-indigo-600" />
           <h3 className="font-bold text-gray-800">Gestión de Datos</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <button onClick={handleExport} className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 transition-all text-left">
-            <div className="p-2 bg-green-100 text-green-600 rounded-lg"><Download size={20} /></div>
+          <button onClick={handleExport} className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 transition-all text-left group">
+            <div className="p-2 bg-green-100 text-green-600 rounded-lg group-hover:scale-110 transition-transform"><Download size={20} /></div>
             <div>
               <p className="text-sm font-bold text-gray-800">Crear Backup</p>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Descargar JSON</p>
@@ -155,10 +165,10 @@ export function AjustesPage() {
 
           <button 
             onClick={() => fileInputRef.current?.click()} 
-            className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 transition-all text-left"
+            className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 transition-all text-left group"
           >
             <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={onFileSelect} />
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><Upload size={20} /></div>
+            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform"><Upload size={20} /></div>
             <div>
               <p className="text-sm font-bold text-gray-800">Restaurar Datos</p>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Subir archivo</p>
@@ -173,6 +183,48 @@ export function AjustesPage() {
           >
             <Trash2 size={14} /> Borrar todos los datos (Reset de fábrica)
           </button>
+        </div>
+      </div>
+
+      {/* --- SECCIÓN DE CRÉDITOS (Samuel Antúnez & SillyDevs Studio) --- */}
+      <div className="pt-6 border-t border-gray-100">
+        <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100 flex flex-col items-center text-center space-y-4">
+          <div className="flex items-center gap-2 text-indigo-600 font-bold tracking-widest text-xs uppercase opacity-70">
+            <Code2 size={14} /> Código totalmente libre. ¡Deja tu ⭐ en GitHub!
+          </div>
+          
+          <div>
+            <h4 className="text-lg font-black text-slate-800">JamDoc 1.0.0 stable</h4>
+            <p className="text-sm text-slate-500 font-medium">
+              Desarrollado por <span className="text-indigo-600 font-bold">Samuel Antúnez</span>
+            </p>
+            <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-widest">
+              © SillyDevs Studio - 2026
+            </p>
+          </div>
+
+          <div className="flex gap-4">
+            <a 
+              href="https://github.com/ssamueliuss/jamdoc"
+              target="_blank" 
+              rel="noreferrer"
+              className="p-2 bg-white border border-gray-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-md transition-all group"
+              title="Página de JamDoc en GitHub"
+            >
+              <Github size={20} className="group-hover:rotate-12 transition-transform" />
+            </a>
+            <a 
+              href="https://sillydevs.itch.io/jamdoc"
+              target="_blank" 
+              rel="noreferrer"
+              className="p-2 bg-white border border-gray-200 rounded-full text-slate-600 hover:text-red-500 hover:border-red-200 hover:shadow-md transition-all group"
+              title="Página de JamDoc en itch.io"
+            >
+              <Gamepad2 size={20} className="group-hover:-rotate-12 transition-transform" />
+            </a>
+          </div>
+
+        
         </div>
       </div>
 
